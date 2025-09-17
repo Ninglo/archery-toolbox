@@ -30,7 +30,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header title="记分板" />
-      
+
       <div className="p-4">
         <div className="bg-blue-50 rounded-lg p-6 mb-6 text-center">
           <button
@@ -49,7 +49,7 @@ export default function HomePage() {
             <div className="text-center text-gray-500 py-8">
               <div className="text-6xl mb-4">🏹</div>
               <p>暂无记录</p>
-              <p className="text-sm mt-2">点击"开始记分"开始您的第一次记录</p>
+              <p className="text-sm mt-2">点击&ldquo;开始记分&rdquo;开始您的第一次记录</p>
             </div>
           ) : (
             sessions

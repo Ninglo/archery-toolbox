@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { SessionConfig, Session, SetScore, ArrowScore, BowType, Distance, Sets, ArrowsPerSet } from '@/types'
 import { generateSessionId, calculateSetTotal, saveSession } from '@/utils/storage'
@@ -27,7 +27,9 @@ export default function RecordPage() {
     arrowsPerSet: 6
   })
 
-  const initializeSession = () => {
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  const initializeSession = useCallback(() => {
     const newSession: Session = {
       id: generateSessionId(),
       config,
@@ -41,12 +43,19 @@ export default function RecordPage() {
       createdAt: new Date().toISOString()
     }
     setSession(newSession)
-  }
+    setIsInitialized(true)
+  }, [config])
 
+  // 初始化session
   useEffect(() => {
-    if (!session) {
+    if (!isInitialized) {
       initializeSession()
-    } else {
+    }
+  }, [initializeSession, isInitialized])
+
+  // 配置改变时更新session
+  useEffect(() => {
+    if (session && isInitialized) {
       // 当配置改变时，更新现有session的config和sets结构
       const updatedSets = Array.from({ length: config.sets }, (_, setIndex) => {
         const existingSet = session.sets[setIndex]
@@ -81,7 +90,7 @@ export default function RecordPage() {
 
       setSession(updatedSession)
     }
-  }, [config])
+  }, [config, isInitialized])
 
   // 单独处理索引调整，避免在config变化时造成无限循环
   useEffect(() => {
