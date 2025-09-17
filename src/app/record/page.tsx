@@ -193,6 +193,59 @@ export default function RecordPage() {
     router.push(`/result/${session.id}`)
   }
 
+  // 检查一组是否有记分数据
+  const hasScoreData = (set: SetScore): boolean => {
+    // 如果有非M的箭或者有备注，就算有数据
+    return set.arrows.some(arrow => arrow.value !== 'M') || set.note.trim() !== ''
+  }
+
+  // 获取已有记分的组数
+  const getCompletedSetsCount = (): number => {
+    let completedCount = 0
+    for (let i = 0; i < session.sets.length; i++) {
+      if (hasScoreData(session.sets[i])) {
+        completedCount = i + 1
+      }
+    }
+    return completedCount
+  }
+
+  // 提前结束处理
+  const handleEarlyFinish = () => {
+    const completedSetsCount = getCompletedSetsCount()
+    
+    if (completedSetsCount === 0) {
+      alert('至少需要完成一组记分才能保存')
+      return
+    }
+
+    if (confirm(`确定要提前结束吗？将保存前 ${completedSetsCount} 组的记分数据。`)) {
+      // 创建新的配置，设置实际完成的组数
+      const newConfig = {
+        ...config,
+        sets: completedSetsCount as Sets
+      }
+
+      // 只保留已完成的组
+      const completedSets = session.sets.slice(0, completedSetsCount)
+      
+      const finalSession = {
+        ...session,
+        config: newConfig,
+        sets: completedSets,
+        totalScore: completedSets.reduce((sum, set) => sum + set.total, 0),
+        completedAt: new Date().toISOString()
+      }
+      
+      // 重新计算平均分（基于实际完成的箭数）
+      const totalArrows = completedSets.reduce((sum, set) => sum + set.arrows.length, 0)
+      finalSession.averageScore = totalArrows > 0 ? finalSession.totalScore / totalArrows : 0
+
+      saveSession(finalSession)
+      router.push(`/result/${session.id}`)
+    }
+  }
+
   const getScoreColor = (value: ArrowScore['value']) => {
     if (value === 'X' || value === '10' || value === '9') return 'bg-yellow-400'
     if (value === '8' || value === '7') return 'bg-red-500'
@@ -344,28 +397,41 @@ export default function RecordPage() {
         </div>
 
         {/* 底部操作按钮 */}
-        <div className="grid grid-cols-4 gap-2">
-          <button className="bg-yellow-400 text-black py-4 rounded-lg font-medium">
-            📝 配箭
-          </button>
-          <button 
-            onClick={handleClearSet}
-            className="bg-pink-400 text-white py-4 rounded-lg font-medium"
-          >
-            🔄 清空
-          </button>
-          <button 
-            onClick={handleDeleteArrow}
-            className="bg-gray-400 text-white py-4 rounded-lg font-medium"
-          >
-            ↶ 删除
-          </button>
-          <button 
-            onClick={handleSave}
-            className="bg-cyan-400 text-white py-4 rounded-lg font-medium"
-          >
-            ✓ 保存
-          </button>
+        <div className="space-y-2">
+          {/* 第一行：主要操作 */}
+          <div className="grid grid-cols-2 gap-2">
+            <button 
+              onClick={handleSave}
+              className="bg-cyan-400 text-white py-4 rounded-lg font-medium"
+            >
+              ✓ 保存
+            </button>
+            <button 
+              onClick={handleEarlyFinish}
+              className="bg-orange-400 text-white py-4 rounded-lg font-medium"
+            >
+              🏁 提前结束
+            </button>
+          </div>
+          
+          {/* 第二行：编辑操作 */}
+          <div className="grid grid-cols-3 gap-2">
+            <button 
+              onClick={handleClearSet}
+              className="bg-pink-400 text-white py-3 rounded-lg font-medium text-sm"
+            >
+              🔄 清空
+            </button>
+            <button 
+              onClick={handleDeleteArrow}
+              className="bg-gray-400 text-white py-3 rounded-lg font-medium text-sm"
+            >
+              ↶ 删除
+            </button>
+            <button className="bg-yellow-400 text-black py-3 rounded-lg font-medium text-sm">
+              📝 配箭
+            </button>
+          </div>
         </div>
       </div>
     </div>
